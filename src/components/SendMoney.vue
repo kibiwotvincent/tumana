@@ -41,7 +41,7 @@ onMounted(() => {
 
         // Call your server to finalize the transaction
         onApprove: function(data, actions) {
-            return fetch('http://localhost:8000/api/paypal/order/' + data.orderID + '/capture/', {
+            return fetch(import.meta.env.VITE_API_URL+'/api/paypal/order/' + data.orderID + '/capture/', {
                 method: 'post'
             }).then(function(res) {
                 return res.json();
@@ -165,10 +165,12 @@ onMounted(() => {
             </form>
 
             
-            
-            <div id="checkout" class="checkout">
-            
-          </div>
+            <!--
+            <div class="w-full">
+                <h1 class="text-gray-800 text-xl font-bold text-center">Transaction successful.</h1>
+                <p class="text-left text-gray-800 text-center">Kshs {{transactionStore.transaction.receiver_amount}} has been sent to {{transactionStore.transaction.receiver_phone_number}} via MPESA</p>
+            </div>
+            -->
             
         </div>
       </div>
@@ -187,9 +189,10 @@ onMounted(() => {
 		name: 'SendMoney',
 		data() {
 			return {
-                transfer_amount: '55',
-	            receiver_amount: '5500',			
-                receiver_phone_number: '0752465231'
+                transfer_amount: '',
+	            receiver_amount: '',			
+                receiver_phone_number: '',
+                is_complete: false
 			}
 		},
         mountedd() {
