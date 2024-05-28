@@ -4,10 +4,7 @@
    import { router } from '@/router';
     
    const transactionStore = useTransactionStore()
-
-        
-        
-    </script>
+</script>
 
 <template>
   <div class="bg-white">
@@ -19,7 +16,7 @@
         
       <div class="mx-auto max-w-2xl py-32 sm:py-48 lg:py-20">
       <div class="p-4">
-          <div v-show="! this.payment_success" class="flex items-center justify-center">
+          <div v-show="! payment_success" class="flex items-center justify-center">
             <form class="space-y-4 w-full" @submit.prevent="makePayment">
                 <div class="flex w-full gap-4">
                     <div class="w-1/2">
@@ -72,7 +69,7 @@
             </form>
           </div>
           
-          <div v-show="this.payment_success" class="flex items-center justify-center">
+          <div v-show="payment_success" class="flex items-center justify-center">
             <div class="w-full">
                 <p class="text-center font-bold text-gray-800">Payment Succesful!</p>
                 <div class="alert alert-success my-4">Transaction has been processed successfully. View Trasaction status from transaction history page.</div>
@@ -133,8 +130,11 @@
             };
 
             const card = elements.create('card', {style: style, hidePostalCode: true});
-
-            card.mount('#card-element');
+            
+            setTimeout(function() {
+                card.mount('#card-element');
+            }, 5000);
+    
             cardElement.value = card
 
         },
