@@ -132,8 +132,9 @@
             const card = elements.create('card', {style: style, hidePostalCode: true});
             
             setTimeout(function() {
+                //delay rendering card element by 2 seconds
                 card.mount('#card-element');
-            }, 5000);
+            }, 2000);
     
             cardElement.value = card
 
