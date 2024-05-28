@@ -1,10 +1,89 @@
 <script setup>
+    
    import Header from '@/components/Header.vue'
-    
    import { useTransactionStore, useAuthStore } from '@/stores'
-   import { router } from '@/router';
+    import { router } from '@/router';
+	
     
-   const transactionStore = useTransactionStore()
+const transactionStore = useTransactionStore()
+    
+    
+import { onMounted } from 'vue'
+    
+const user = useAuthStore()
+    
+onMounted(() => {
+    
+    paypal.Buttons({
+        // Call your server to set up the transaction
+        createOrder: function(data, actions) {
+            return fetch(import.meta.env.VITE_API_URL+'/api/paypal/order/create/', {
+                method: 'post',
+                headers: {
+                  "Content-Type" : "application/json",
+                  "Authorization" : `Bearer ${user.token}`
+                },
+                body: JSON.stringify({
+                    order: [
+                      {
+                        transfer_amount: transactionStore.transaction.transfer_amount,
+                        receiver_amount: transactionStore.transaction.receiver_amount,
+                        receiver_phone_number: transactionStore.transaction.receiver_phone_number,
+                      },
+                    ],
+                }),
+            }).then(function(res) {
+                return res.json();
+            }).then(function(orderData) {
+                return orderData.id;
+            });
+        },
+
+        // Call your server to finalize the transaction
+        onApprove: function(data, actions) {
+            return fetch(import.meta.env.VITE_API_URL+'/api/paypal/order/' + data.orderID + '/capture/', {
+                method: 'post'
+            }).then(function(res) {
+                return res.json();
+            }).then(function(orderData) {
+                // Three cases to handle:
+                //   (1) Recoverable INSTRUMENT_DECLINED -> call actions.restart()
+                //   (2) Other non-recoverable errors -> Show a failure message
+                //   (3) Successful transaction -> Show confirmation or thank you
+
+                // This example reads a v2/checkout/orders capture response, propagated from the server
+                // You could use a different API or structure for your 'orderData'
+                var errorDetail = Array.isArray(orderData.details) && orderData.details[0];
+
+                if (errorDetail && errorDetail.issue === 'INSTRUMENT_DECLINED') {
+                    return actions.restart(); // Recoverable state, per:
+                    // https://developer.paypal.com/docs/checkout/integration-features/funding-failure/
+                }
+
+                if (errorDetail) {
+                    var msg = 'Sorry, your transaction could not be processed.';
+                    if (errorDetail.description) msg += '\n\n' + errorDetail.description;
+                    if (orderData.debug_id) msg += ' (' + orderData.debug_id + ')';
+                    return msg;//alert(msg); // Show a failure message (try to avoid alerts in production environments)
+                }
+
+                // Successful capture! For demo purposes:
+                console.log('Capture result', orderData, JSON.stringify(orderData, null, 2));
+                router.push('/history')
+                //var transaction = orderData.purchase_units[0].payments.captures[0];
+                //alert('Transaction '+ transaction.status + ': ' + transaction.id + '\n\nSee console for all available details');
+
+                // Replace the above to show a success message within this page, e.g.
+                // const element = document.getElementById('paypal-button-container');
+                // element.innerHTML = '';
+                // element.innerHTML = '<h3>Thank you for your payment!</h3>';
+                // Or go to another URL:  actions.redirect('thank_you.html');
+            });
+        }
+
+    }).render('#paypal-button-container');
+})   
+
 </script>
 <template>
   <div class="bg-white">
@@ -18,21 +97,21 @@
       <div class="p-4">
         <div class="flex items-center justify-center">
             
-            <form class="space-y-6 w-full" @submit.prevent="transactionStore.createOrder()">
+            <form class="space-y-6 w-full" action="#" method="POST">
+              
                 <div class="flex w-full gap-4">
                     <div class="w-1/2">
                         <label for="transfer_amount" class="block text-sm font-medium leading-6 text-gray-800">You send (AUD)</label>
                 
                   <div class="mt-2 relative flex flex-wrap items-stretch">
                   <input
-                    type="text"
+                    type="number"
                     class="relative block w-[80%] min-w-0 flex-auto rounded-l border-0 py-3.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                     placeholder="Amount you want to send..."
                     aria-label="Amount you want to send..."
                     aria-describedby="transfer_amount"
                     v-model="transactionStore.transaction.transfer_amount"
                     @input="updateReceiverAmount()"
-                    required
                     />
                       
                   <span
@@ -47,14 +126,13 @@
                 <label for="receiver_amount" class="block text-sm font-medium leading-6 text-gray-800">Recipient gets (KSH)</label>
                 <div class="mt-2 relative flex flex-wrap items-stretch">
                   <input
-                    type="text"
+                    type="number"
                     class="relative block w-[80%] min-w-0 flex-auto rounded-l border-0 py-3.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                     placeholder="Amount receiver gets..."
                     aria-label="Amount receiver gets..."
                     aria-describedby="receiver_amount"
                     v-model="transactionStore.transaction.receiver_amount"
                     @input="updateTransferAmount()"
-                    required
                     />
                       
                   <span
@@ -81,36 +159,18 @@
                          />
                 </div>
               </div>
-                <div class="flex w-full gap-4">
-                    <div class="w-1/2">
-                        <label for="transfer_amount" class="block text-sm font-medium leading-6 text-gray-800">Exchange Rate</label>
-                    </div>
-                    <div class="w-1/2 text-right">
-                        <label for="transfer_amount" class="block text-sm font-bold leading-6 text-gray-900">AUD 1 = KES {{ transactionStore.transaction.exchange_rate }}</label>
-                    </div>
-                </div>
-                <div class="flex w-full gap-4">
-                    <div class="w-1/2">
-                        <label for="transfer_amount" class="block text-sm font-medium leading-6 text-gray-800">Transfer Fee</label>
-                    </div>
-                    <div class="w-1/2 text-right">
-                        <label for="transfer_amount" class="block text-sm font-bold leading-6 text-gray-900">AUD {{ transactionStore.transaction.transfer_fee }}</label>
-                    </div>
-                </div>
-                <div class="flex w-full gap-4">
-                    <div class="w-1/2">
-                        <label for="transfer_amount" class="block text-sm font-medium leading-6 text-gray-800">Amount you will pay</label>
-                    </div>
-                    <div class="w-1/2 text-right">
-                        <label for="transfer_amount" class="block text-lg font-bold leading-6 text-indigo-600">AUD {{ transactionStore.transaction.total_amount }}</label>
-                    </div>
-                </div>
-              <div>
-                  <button type="submit" class="flex w-full justify-center rounded-md bg-indigo-600 py-3.5 text- font-semibold leading-6 text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
-                    Pay with Credit Card or Debit Card
-                  </button>  
-              </div>
+              <p class="text-sm text-gray-600">AUD 1 = KES 101.00. The amount you send is inclusive of our AUD 0.40 fee. By continuing to checkout, you agree to the terms of service.</p>
+              <p class="text-center text-gray-800">Pay with PayPal, Debit Card or Credit Card</p>
+              <div id="paypal-button-container"></div>
             </form>
+
+            
+            <!--
+            <div class="w-full">
+                <h1 class="text-gray-800 text-xl font-bold text-center">Transaction successful.</h1>
+                <p class="text-left text-gray-800 text-center">Kshs {{transactionStore.transaction.receiver_amount}} has been sent to {{transactionStore.transaction.receiver_phone_number}} via MPESA</p>
+            </div>
+            -->
             
         </div>
       </div>
@@ -123,7 +183,7 @@
   </div>
 </template>
 <script>
-	import createHttp from '@/axios.js'
+	//import createHttp from '@/axios.js'
 	
 	export default {
 		name: 'SendMoney',
@@ -137,9 +197,12 @@
 			}
 		},
         mounted() {
-            const transactionStore = useTransactionStore()
-            transactionStore.setExchangeRate()
-            transactionStore.setTransferFee()
+            const http = createHttp()
+            http.get(import.meta.env.VITE_API_URL+'/api/stripe/payment_intent/create')
+                .then((response) => {
+                    this.payment_intent_secret = response.secret
+                    alert(this.payment_intent_secret);
+                })
         },
         methods: {
 			updateReceiverAmount() {

@@ -4,6 +4,7 @@ import { useAuthStore } from '@/stores';
 //import Account from "@/layouts/Account.vue";
 import HomeView from '../views/HomeView.vue'
 import SendMoneyView from '../views/SendMoneyView.vue'
+import MakePaymentView from '../views/MakePaymentView.vue'
 import TransactionHistoryView from '../views/TransactionHistoryView.vue'
 import LoginView from '@/views/LoginView.vue'
 import RegisterView from '@/views/RegisterView.vue'
@@ -27,6 +28,11 @@ const routes = [
 				path: "/send",
 				name: 'send',
 				component: SendMoneyView,
+			},
+            {
+				path: "/pay",
+				name: 'pay',
+				component: MakePaymentView,
 			},
 			{
 				path: "/history",

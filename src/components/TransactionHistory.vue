@@ -22,15 +22,15 @@
         
       <div class="flex min-w-0 gap-x-4">
         <div class="min-w-0 flex-auto">
-            <p class="mb-2 text-gray-700">Ref: {{ transaction.reference_id }}</p>
-          <p class="text-sm font-semibold leading-6 text-gray-900">{{ transaction.receiver_name }} ({{ transaction.receiver_phone_number }})</p>
-          <p class="mt-1 truncate text-xs leading-5 text-gray-500">{{ transaction.transaction_time }}</p>
+            <p class="mb-2 font-medium text-gray-800">Transaction Ref: {{ transaction.reference_id }}</p>
+          <p class="text-sm font-semibold leading-6 text-gray-900">Receiver: {{ transaction.receiver_phone_number }}</p>
+          <p class="mt-1 truncate text-xs leading-5 text-gray-500">Transaction Time: {{ transaction.transaction_time }}</p>
         </div>
       </div>
-      <div class="hidden shrink-0 sm:flex sm:flex-col sm:items-end">
+      <div class="shrink-0 sm:flex sm:flex-col sm:items-end">
         <p class="text-l leading-6 text-gray-700 font-bold">Kshs {{ transaction.receiver_amount }}</p>
         <p class="mt-1 text-xs leading-5 text-gray-500">
-          PAYPAL: {{ transaction.paypal_status }}
+          STRIPE: {{ transaction.status }}
           </p>
           <p class="text-xs mt-1">M-PESA: {{ transaction.mpesa_status }}</p>
       </div>
