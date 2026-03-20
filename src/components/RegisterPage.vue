@@ -5,10 +5,11 @@ import Spinner from '@/components/Spinner.vue';
 import Header from '@/components/Header.vue'
 
 import { useAuthStore } from '@/stores';
+import { applyFormErrors } from '@/utils/applyFormErrors'
 
 const schema = Yup.object().shape({
-    first_name: Yup.string().required(),
-    last_name: Yup.string().required(),
+    first_name: Yup.string().label('First name').required(),
+    last_name: Yup.string().label('Last name').required(),
     email: Yup.string().required().email(),
     password: Yup.string().required(),
     password_confirmation: Yup.string().required('password confirmation is required').oneOf([Yup.ref('password'), null], 'Passwords must match')
@@ -19,21 +20,7 @@ function onSubmit(values, { setErrors }) {
     const { first_name, last_name, email, password, password_confirmation } = values;
 
     return authStore.register(first_name, last_name, email, password, password_confirmation)
-        .catch(errorResponse => {
-			const errors = {};
-			errors.apiError = errorResponse.data.message;
-			
-			if(Object.prototype.hasOwnProperty.call(errorResponse.data, 'errors')) {
-				let errorFields = Object.keys(errorResponse.data.errors);
-				
-				// insert laravel errors
-				errorFields.map(field => {
-					errors[field] = errorResponse.data.errors[field][0];
-				});
-			}
-			
-			setErrors(errors);
-		});
+        .catch(error => applyFormErrors(error, setErrors));
 }
 </script>
 
@@ -46,8 +33,6 @@ function onSubmit(values, { setErrors }) {
       <div class="absolute inset-x-0 -top-40 -z-10 transform-gpu overflow-hidden blur-3xl sm:-top-80" aria-hidden="true">
         <div class="relative left-[calc(50%-11rem)] aspect-[1155/678] w-[36.125rem] -translate-x-1/2 rotate-[30deg] bg-gradient-to-tr from-[#ff80b5] to-[#9089fc] opacity-30 sm:left-[calc(50%-30rem)] sm:w-[72.1875rem]" style="clip-path: polygon(74.1% 44.1%, 100% 61.6%, 97.5% 26.9%, 85.5% 0.1%, 80.7% 2%, 72.5% 32.5%, 60.2% 62.4%, 52.4% 68.1%, 47.5% 58.3%, 45.2% 34.5%, 27.5% 76.7%, 0.1% 64.9%, 17.9% 100%, 27.6% 76.8%, 76.1% 97.7%, 74.1% 44.1%)" />
       </div>
-        
-          
           
       <div class="flex min-h-full flex-col justify-center px-6 py-12 lg:px-8">
           <div class="sm:mx-auto sm:w-full sm:max-w-sm">
@@ -101,7 +86,7 @@ function onSubmit(values, { setErrors }) {
 
               <div>
                 <button type="submit" :disabled="isSubmitting" class="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
-                    <span v-show="isSubmitting"><spinner /></span>
+                    <Spinner v-show="isSubmitting" class="mr-2" />
                     Create Account
                 </button>
               </div>
@@ -120,9 +105,3 @@ function onSubmit(values, { setErrors }) {
     </div>
   </div>
 </template>
-
-<script>
-export default {
-  name: 'RegisterPage',
-}
-</script>

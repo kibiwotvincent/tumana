@@ -90,7 +90,6 @@
 </template>
 <script>
     import { ref } from 'vue';
-	import createHttp from '@/axios.js'
     
     var publishableKey = import.meta.env.VITE_STRIPE_KEY
     const stripe = Stripe(publishableKey);

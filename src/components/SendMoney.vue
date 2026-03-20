@@ -123,7 +123,6 @@
   </div>
 </template>
 <script>
-	import createHttp from '@/axios.js'
 	
 	export default {
 		name: 'SendMoney',

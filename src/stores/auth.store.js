@@ -1,59 +1,51 @@
 import { defineStore } from 'pinia';
-
-import { fetchWrapper } from '@/helpers';
 import { router } from '@/router';
-
-const baseUrl = import.meta.env.VITE_API_URL+'/api/users';
+import  http  from '@/utils/http'
 
 export const useAuthStore = defineStore({
     id: 'auth',
     state: () => ({
         // initialize state from local storage to enable user to stay logged in
-        activeUser: JSON.parse(localStorage.getItem('user')),
-        returnUrl: '/history'
+        activeUser: (() => {
+                        try {
+                            return JSON.parse(localStorage.getItem('user'));
+                        } catch (e) {
+                            return null;
+                        }
+                    })()
     }),
     actions: {
-		async register(first_name, last_name, email, password, password_confirmation) {
-            const response = await fetchWrapper.post(baseUrl+'/register', { first_name, last_name, email, password, password_confirmation });
-			
-			if(response && response.status == 200) {
-				// redirect to login
-				router.push('/login');
-			}
-        },
-        async login(email, password) {
-		const response = await fetchWrapper.post(baseUrl+'/login', { email, password })
+      async register(first_name, last_name, email, password, password_confirmation) {
+        const response = await http.post('/users/register', {
+            first_name, last_name, email, password, password_confirmation
+        });
 
-			if(response && response.status == 200) {
-				const user = response.data;
-				
-				// update pinia state
-				this.activeUser = user;
-				
-				console.log(user)
+        router.push('/login');
+      },
+      async login(email, password) {
+        const response = await http.post('/users/login', { email, password });
 
-				// store user details and api access token in local storage to keep user logged in between page refreshes
-				localStorage.setItem('user', JSON.stringify(user));
+        const user = response.data;
+        this.activeUser = user;
+        localStorage.setItem('user', JSON.stringify(user));
 
-				// redirect to previous url or default to account dashboard
-				router.push(this.returnUrl || '/');
-			}
-        },
-        logout() {
-            this.activeUser = null;
-            localStorage.removeItem('user');
-            router.push('/login');
-        }
+        router.push('/history');
+      },
+      logout() {
+          this.activeUser = null;
+          localStorage.removeItem('user');
+          router.push('/login');
+      }
     },
-	getters: {
-		user() {
-			return this.activeUser
-		},
-		token() {
-			return (this.activeUser == null) ? '' : this.activeUser.token
-		},
-		isLoggedIn() {
-			return (this.activeUser !== null && this.activeUser.token !== '')
-		}
+    getters: {
+      user() {
+        return this.activeUser
+      },
+      token() {
+        return (this.activeUser == null) ? '' : this.activeUser.token
+      },
+      isLoggedIn() {
+          return this.activeUser !== null && this.activeUser?.token
+      }
     }
 });

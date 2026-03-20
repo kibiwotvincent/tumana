@@ -1,8 +1,6 @@
 import { defineStore } from 'pinia'
-import createHttp from '@/axios.js'
 import { router } from '@/router';
-
-const baseUrl = import.meta.env.VITE_API_URL+'/api';
+import  http  from '@/utils/http'
 
 export const useTransactionStore = defineStore({
     id: 'transaction',
@@ -28,22 +26,19 @@ export const useTransactionStore = defineStore({
             this.order.total_amount = parseFloat(this.order.transfer_amount) + this.order.transfer_fee
 		},
         setExchangeRate() {
-            const http = createHttp()
-			http.get(baseUrl+'/exchange_rate')
+			http.get('/exchange_rate')
 			.then((response) => {
 				this.order.exchange_rate = parseFloat(response.data.rate)
 			})
         },
         setTransferFee() {
-            const http = createHttp()
-			http.get(baseUrl+'/fees')
+			http.get('/fees')
 			.then((response) => {
 				this.order.transfer_fee = parseFloat(response.data.fees)
 			})
         },
         createOrder() {
-			const http = createHttp()
-			http.post(baseUrl+'/order/create', {'transfer_amount': this.order.transfer_amount, 'receiver_phone_number' : this.order.receiver_phone_number})
+			http.post('/order/create', {'transfer_amount': this.order.transfer_amount, 'receiver_phone_number' : this.order.receiver_phone_number})
             .then((response) => {
                 this.order.saved_order_info = response.data.order
                 this.order.client_secret = response.data.client_secret

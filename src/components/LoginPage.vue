@@ -5,6 +5,7 @@ import Header from '@/components/Header.vue'
 import Spinner from '@/components/Spinner.vue';
 
 import { useAuthStore } from '@/stores';
+import { applyFormErrors } from '@/utils/applyFormErrors'
 
 const schema = Yup.object().shape({
     email: Yup.string().required().email(),
@@ -13,30 +14,9 @@ const schema = Yup.object().shape({
 
 function onSubmit(values, { setErrors }) {
     const authStore = useAuthStore();
-    const { email, password } = values;
 
-    return authStore.login(email, password)
-        .catch(errorResponse => {
-			const errors = {};
-			
-			if(Object.prototype.hasOwnProperty.call(errorResponse.data, 'message')) {
-				errors.apiError = errorResponse.data.message;
-			}
-			else {
-				errors.apiError = "Network error. Try again later.";
-			}
-			
-			if(Object.prototype.hasOwnProperty.call(errorResponse.data, 'errors')) {
-				let errorFields = Object.keys(errorResponse.data.errors);
-				
-				// insert laravel errors
-				errorFields.map(field => {
-					errors[field] = errorResponse.data.errors[field][0];
-				});
-			}
-			
-			setErrors(errors);
-		});
+    return authStore.login(values.email, values.password)
+           .catch(error => applyFormErrors(error, setErrors));
 }
 </script>
 
@@ -79,11 +59,11 @@ function onSubmit(values, { setErrors }) {
 
               <div>
                 <button type="submit" :disabled="isSubmitting" class="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
-                    <span v-show="isSubmitting"><spinner /></span>
+                    <Spinner v-show="isSubmitting" class="mr-2" />
                     Sign In
                 </button>
               </div>
-            </form>
+            </Form>
 
             <p class="mt-10 text-center text-sm text-gray-500">
               Not a member?
@@ -100,9 +80,3 @@ function onSubmit(values, { setErrors }) {
     </div>
   </div>
 </template>
-        
-<script>
-export default {
-  name: 'LoginPage',
-}
-</script>
